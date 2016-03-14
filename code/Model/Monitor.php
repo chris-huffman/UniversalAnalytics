@@ -459,12 +459,14 @@ class BlueAcorn_UniversalAnalytics_Model_Monitor {
         $object = $objectCollection->getFirstItem();
         $names = Array();
 
-        while ($object->getLevel() > 0) {
-            $names[] = $object->getName();
-            $object = $object->getParentCategory();
+        foreach($object->getParentCategories() as $category) {
+            $names[$category->getLevel()] = $category->getName();
         }
 
-        return implode('/', array_reverse($names));
+        //sort names by level so parent category hierarchy is preserved
+        ksort($names);
+
+        return implode('/', $names);
     }
 
     /**
