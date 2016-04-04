@@ -15,6 +15,8 @@ class BlueAcorn_UniversalAnalytics_Model_Monitor {
 
     protected $helper;
 
+    protected $categoryCollection;
+
     /**
      * Constructor, sets up a shortcut variable for the main helper
      * class.
@@ -455,12 +457,29 @@ class BlueAcorn_UniversalAnalytics_Model_Monitor {
      * @return string
      */
     protected function parseCategoryValue($objectCollection) {
-        $objectCollection->addAttributeToSelect('name');
-        $object = $objectCollection->getFirstItem();
-        $names = Array();
+        
+        if(!isset($this->categoryCollection)) {
+            //get category collection and cache
+            $this->categoryCollection = $categoryCollection = Mage::getModel('catalog/category')->getCollection()
+                ->setStore(Mage::app()->getStore())
+                ->addAttributeToSelect('name')
+                ->addAttributeToSort('level')
+                ->addFieldToFilter('is_active', 1)
+                ->load()
+                ->getItems();
+        }
 
-        foreach($object->getParentCategories() as $category) {
-            $names[$category->getLevel()] = $category->getName();
+        $object = $objectCollection->getFirstItem();
+        $names = array();
+
+        $ids = explode(',', $object->getPathInStore());
+
+        //same as object->getParentCategories() - only use the cached collection:
+        foreach($this->categoryCollection as $id => $category) {
+            if(in_array($id, $ids)) {
+                //parent category so collect info
+                $names[$category->getLevel()] = $category->getName();
+            }
         }
 
         //sort names by level so parent category hierarchy is preserved
